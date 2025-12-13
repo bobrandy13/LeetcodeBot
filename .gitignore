@@ -1,0 +1,35 @@
+# Wrangler
+.wrangler/
+.mf/
+
+# Environment variables and secrets
+.dev.vars
+*.env
+*.env.local
+*.env.*.local
+
+# Configuration with sensitive data
+wrangler.toml
+
+# Dependencies
+node_modules/
+
+# Testing
+coverage/
+*.log
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp/
+temp/
+*.tmp
