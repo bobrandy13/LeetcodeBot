@@ -8,18 +8,8 @@
  * Returns a date string in YYYY-MM-DD format for consistent comparison
  */
 export function getAustralianDate() {
-  const now = new Date();
-  // Get the date parts in Australian timezone
-  const australianDate = new Date(now.toLocaleString('en-US', {
-    timeZone: 'Australia/Sydney',
-  }));
-  
-  // Format as YYYY-MM-DD for consistent comparison
-  const year = australianDate.getFullYear();
-  const month = String(australianDate.getMonth() + 1).padStart(2, '0');
-  const day = String(australianDate.getDate()).padStart(2, '0');
-  
-  return `${year}-${month}-${day}`;
+  const date = new Date().toDateString("en-AU", {timeZone: "Australia/Sydney"});
+  return date; 
 }
 
 /**
@@ -96,11 +86,39 @@ export async function saveUserData(env, userId, userData) {
     console.error('❌ [saveUserData] Error saving user data:', error);
     return false;
   }
-} /**
+}
+ /**
+//  * Normalize date to YYYY-MM-DD format regardless of input format
+//  * Handles both old format ("Fri Dec 13 2025") and new format ("2025-12-13")
+//  */
+// function normalizeDate(dateString) {
+//   if (!dateString) return null;
+  
+//   // If already in YYYY-MM-DD format, return as-is
+//   if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+//     return dateString;
+//   }
+  
+//   // Parse old format and convert to YYYY-MM-DD
+//   const date = new Date(dateString);
+//   if (isNaN(date.getTime())) {
+//     console.error(`[normalizeDate] Invalid date string: ${dateString}`);
+//     return null;
+//   }
+  
+//   const year = date.getFullYear();
+//   const month = String(date.getMonth() + 1).padStart(2, '0');
+//   const day = String(date.getDate()).padStart(2, '0');
+  
+//   return `${year}-${month}-${day}`;
+// }
+
+/**
  * Update user streak based on completion timing
  */
 export function updateStreak(userData) {
   const today = getAustralianDate();
+
   const lastDate = userData.lastCompletionDate;
 
   console.log(`[updateStreak] Today: ${today}, Last completion: ${lastDate}`);
@@ -109,31 +127,43 @@ export function updateStreak(userData) {
     // First completion
     console.log(`[updateStreak] First completion, setting streak to 1`);
     userData.currentStreak = 1;
-  } else if (lastDate === today) {
-    // Already completed today, don't update streak
-    console.log(`[updateStreak] Already completed today, maintaining streak: ${userData.currentStreak}`);
-    return userData;
   } else {
-    // Calculate day difference using YYYY-MM-DD format
-    const lastDateObj = new Date(lastDate + 'T00:00:00Z');
-    const todayDateObj = new Date(today + 'T00:00:00Z');
-    const diffTime = todayDateObj - lastDateObj;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    // // Normalize the last completion date to YYYY-MM-DD format
+    // const normalizedLastDate = normalizeDate(lastDate);
 
-    console.log(`[updateStreak] Day difference: ${diffDays}`);
-
-    if (diffDays === 1) {
-      // Consecutive day
-      userData.currentStreak += 1;
-      console.log(`[updateStreak] Consecutive day! Streak increased to: ${userData.currentStreak}`);
-    } else if (diffDays <= 0) {
-      // This shouldn't happen, but handle it gracefully
-      console.log(`[updateStreak] Invalid day difference (${diffDays}), maintaining streak: ${userData.currentStreak}`);
+    // console.log(`[updateStreak] Normalized last date: ${normalizedLastDate}`);
+    
+    if (lastDate === today) {
+      // Already completed today, don't update streak but ensure date format is consistent
+      console.log(`[updateStreak] Already completed today, maintaining streak: ${userData.currentStreak}`);
+      userData.lastCompletionDate = today; // Update to new format
       return userData;
     } else {
-      // Streak broken
-      console.log(`[updateStreak] Streak broken (missed ${diffDays - 1} day(s)), resetting to 1`);
-      userData.currentStreak = 1;
+      // Calculate day difference using YYYY-MM-DD format with UTC to avoid timezone issues
+      const lastDateObj = new Date(lastDate);
+      const todayDateObj = new Date(today);
+      const diffTime = todayDateObj - lastDateObj;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      console.log(`[updateStreak] Day difference: ${diffDays} (from ${lastDate} to ${today})`);
+
+      if (diffDays === 1) {
+        // Consecutive day
+        userData.currentStreak += 1;
+        console.log(`[updateStreak] Consecutive day! Streak increased to: ${userData.currentStreak}`);
+      } else if (diffDays === 0) {
+        // Same day (shouldn't happen due to check above, but handle it)
+        console.log(`[updateStreak] Same day detected, maintaining streak: ${userData.currentStreak}`);
+        return userData;
+      } else if (diffDays < 0) {
+        // Date is in the future? This shouldn't happen - maintain streak
+        console.log(`[updateStreak] WARNING: Last completion date is in the future! Maintaining streak: ${userData.currentStreak}`);
+        return userData;
+      } else {
+        // Streak broken (diffDays > 1)
+        console.log(`[updateStreak] Streak broken (missed ${diffDays - 1} day(s)), resetting to 1`);
+        userData.currentStreak = 1;
+      }
     }
   }
 
@@ -312,9 +342,8 @@ export async function updateGroupStreak(env, currentUserData = null) {
     // Required usernames for group streak
     const REQUIRED_USERS = [
       'razar0200',
-      'drag0n0',
+      'bobrandy',
       'esshaygod',
-      'icdumplingman',
     ];
     console.log(`  [updateGroupStreak] Required users:`, REQUIRED_USERS);
 
@@ -359,27 +388,27 @@ export async function updateGroupStreak(env, currentUserData = null) {
     );
     console.log(`  [updateGroupStreak] Missing users:`, missingUsernames);
 
-    // For any required user who did NOT complete today, their personal streak should be reset to 0.
-    // Persist this change so future calculations (and `/stats`) reflect the break.
-    for (const user of requiredUsersData) {
-      try {
-        if (user.lastCompletionDate !== today) {
-          if (user.currentStreak !== 0) {
-            console.log(`  [updateGroupStreak] Resetting streak for ${user.username} (was ${user.currentStreak}) because they missed today`);
-            user.currentStreak = 0;
-            // Save updated user data back to KV
-            await saveUserData(env, user.userId, {
-              username: user.username || '',
-              completedQuestions: user.completedQuestions || [],
-              currentStreak: user.currentStreak,
-              lastCompletionDate: user.lastCompletionDate || null,
-            });
-          }
-        }
-      } catch (err) {
-        console.error(`  [updateGroupStreak] Error resetting streak for ${user.username}:`, err);
-      }
-    }
+    // // For any required user who did NOT complete today, their personal streak should be reset to 0.
+    // // Persist this change so future calculations (and `/stats`) reflect the break.
+    // for (const user of requiredUsersData) {
+    //   try {
+    //     if (user.lastCompletionDate !== today) {
+    //       if (user.currentStreak !== 0) {
+    //         console.log(`  [updateGroupStreak] Resetting streak for ${user.username} (was ${user.currentStreak}) because they missed today`);
+    //         user.currentStreak = 0;
+    //         // Save updated user data back to KV
+    //         await saveUserData(env, user.userId, {
+    //           username: user.username || '',
+    //           completedQuestions: user.completedQuestions || [],
+    //           currentStreak: user.currentStreak,
+    //           lastCompletionDate: user.lastCompletionDate || null,
+    //         });
+    //       }
+    //     }
+    //   } catch (err) {
+    //     console.error(`  [updateGroupStreak] Error resetting streak for ${user.username}:`, err);
+    //   }
+    // }
 
     // Group streak logic: minimum of all individual streaks
     // This represents consecutive days where ALL users maintained their streaks

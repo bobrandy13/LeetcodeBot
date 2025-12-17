@@ -234,6 +234,7 @@ router.post('/', async (request, env) => {
         // Update streak
         console.log('📊 Updating streak...');
         userData = updateStreak(userData);
+        const x = userData.lastCompletionDate;
         console.log('Streak updated:', userData.currentStreak);
 
         // Save updated data
@@ -291,7 +292,7 @@ router.post('/', async (request, env) => {
               : '✅';
 
         let response =
-          `🎉 Great job, ${username}! You completed **${questionTitle}**${questionDetails}!\n` +
+          `🎉 Great job, ${username}! You completed **${questionTitle}**${questionDetails} on ${getAustralianDate()}. You last completed one on ${userData.lastCompletionDate} - ${x}!\n` +
           `${streakEmoji} Current streak: ${userData.currentStreak} day${userData.currentStreak !== 1 ? 's' : ''}\n` +
           `📊 Total completed: ${userData.completedQuestions.length} question${userData.completedQuestions.length !== 1 ? 's' : ''}`;
 
@@ -464,11 +465,11 @@ router.post('/', async (request, env) => {
 
         let response = `${streakEmoji} **Group Daily Streak: ${groupData.streak}** day${groupData.streak !== 1 ? 's' : ''}\n\n`;
 
-        response += `🎯 **Required Members:** razar0200, icdumplingman, drag0n0, esshaygod\n`;
+        response += `🎯 **Required Members:** razar0200, bobrandy, esshaygod\n`;
         response += `📅 **Today (${today}):**\n\n`;
 
         if (groupData.allRequiredParticipated) {
-          response += `🎉 **ALL 4 MEMBERS COMPLETED TODAY!** ✅\n`;
+          response += `🎉 **ALL REQUIRED MEMBERS COMPLETED TODAY!** ✅\n`;
           response += `👥 **Completed:** ${groupData.participatingUsers.join(', ')}\n\n`;
           if (groupData.streak === 1) {
             response += `🚀 Group streak started! Keep it going tomorrow!`;

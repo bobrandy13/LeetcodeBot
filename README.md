@@ -94,12 +94,12 @@ View the group's completion history and streak progression:
 
 View and track the daily group streak where:
 
-- **All 4 core members** (razar0200, bobrandy, drag0n0, esshaygod) must complete a question each day to maintain the streak
+- **All required members** (razar0200, bobrandy, esshaygod) must complete a question each day to maintain the streak
 - Shows current group streak count
 - Displays today's participation status
 - Clearly lists who has/hasn't completed questions today
 - Provides motivation to keep the group streak alive!
-- Streak only increments when ALL 4 members participate on the same day
+- Streak only increments when ALL required members participate on the same day
 
 ## 🚀 LeetCode API Integration
 
